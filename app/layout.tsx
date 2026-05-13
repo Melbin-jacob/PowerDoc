@@ -3,6 +3,7 @@ import './globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AdSlot from '@/components/AdSlot';
+import Polyfills from '@/components/Polyfills';
 import { Toaster } from 'react-hot-toast';
 
 export const metadata: Metadata = {
@@ -16,6 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="h-full">
       <body className="min-h-full flex flex-col bg-white text-slate-900 antialiased">
+        <Polyfills />
         <Toaster position="top-right" />
 
         {/* Top ad banner */}
