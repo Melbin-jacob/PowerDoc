@@ -5,52 +5,17 @@ import {
   FileText, Scissors, Layers, FileImage, Type,
   Shield, Zap, Lock, ArrowRight, Upload
 } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useFileStore } from '@/store/fileStore';
 
 const features = [
-  {
-    icon: <FileText className="w-6 h-6" />,
-    title: 'Edit PDF',
-    desc: 'Add text, images, annotations and signatures to any PDF.',
-    href: '/editor',
-    color: 'bg-blue-50 text-blue-600',
-  },
-  {
-    icon: <Scissors className="w-6 h-6" />,
-    title: 'Split PDF',
-    desc: 'Extract specific pages or split a PDF into multiple files.',
-    href: '/editor?tool=split',
-    color: 'bg-orange-50 text-orange-600',
-  },
-  {
-    icon: <Layers className="w-6 h-6" />,
-    title: 'Merge PDFs',
-    desc: 'Combine multiple PDF files into a single document.',
-    href: '/editor?tool=merge',
-    color: 'bg-purple-50 text-purple-600',
-  },
-  {
-    icon: <FileImage className="w-6 h-6" />,
-    title: 'PDF to Images',
-    desc: 'Convert each PDF page to high-quality JPG or PNG images.',
-    href: '/converter?tool=pdf-to-jpg',
-    color: 'bg-green-50 text-green-600',
-  },
-  {
-    icon: <Type className="w-6 h-6" />,
-    title: 'Word to PDF',
-    desc: 'Convert DOCX documents to PDF instantly.',
-    href: '/converter?tool=word-to-pdf',
-    color: 'bg-sky-50 text-sky-600',
-  },
-  {
-    icon: <Zap className="w-6 h-6" />,
-    title: 'Compress PDF',
-    desc: 'Reduce PDF file size while keeping quality high.',
-    href: '/editor?tool=compress',
-    color: 'bg-yellow-50 text-yellow-600',
-  },
+  { icon: <FileText className="w-6 h-6" />, title: 'Edit PDF', desc: 'Add text, images, annotations and signatures to any PDF.', href: '/editor', color: 'bg-blue-50 text-blue-600' },
+  { icon: <Scissors className="w-6 h-6" />, title: 'Split PDF', desc: 'Extract specific pages or split a PDF into multiple files.', href: '/editor?tool=split', color: 'bg-orange-50 text-orange-600' },
+  { icon: <Layers className="w-6 h-6" />, title: 'Merge PDFs', desc: 'Combine multiple PDF files into a single document.', href: '/editor?tool=merge', color: 'bg-purple-50 text-purple-600' },
+  { icon: <FileImage className="w-6 h-6" />, title: 'PDF to Images', desc: 'Convert each PDF page to high-quality JPG or PNG images.', href: '/converter?tool=pdf-to-jpg', color: 'bg-green-50 text-green-600' },
+  { icon: <Type className="w-6 h-6" />, title: 'Word to PDF', desc: 'Convert DOCX documents to PDF instantly.', href: '/converter?tool=word-to-pdf', color: 'bg-sky-50 text-sky-600' },
+  { icon: <Zap className="w-6 h-6" />, title: 'Compress PDF', desc: 'Reduce PDF file size while keeping quality high.', href: '/editor?tool=compress', color: 'bg-yellow-50 text-yellow-600' },
 ];
 
 const stats = [
@@ -62,9 +27,12 @@ const stats = [
 
 export default function HomePage() {
   const router = useRouter();
+  const { setPendingFile } = useFileStore();
   const [dragging, setDragging] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = useCallback((file: File) => {
+    setPendingFile(file);
     if (file.type === 'application/pdf') {
       router.push('/editor');
     } else if (
@@ -75,7 +43,7 @@ export default function HomePage() {
     } else {
       router.push('/converter');
     }
-  }, [router]);
+  }, [router, setPendingFile]);
 
   const onDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -99,29 +67,31 @@ export default function HomePage() {
           Powerful online PDF tools. Edit, merge, split, compress and convert documents — right in your browser. Nothing is uploaded to any server.
         </p>
 
-        {/* Upload drop zone */}
+        {/* Upload drop zone — use a real <label> so click always opens file dialog */}
         <div
           onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-          onDragLeave={() => setDragging(false)}
+          onDragLeave={(e) => { e.preventDefault(); setDragging(false); }}
           onDrop={onDrop}
-          onClick={() => document.getElementById('hero-upload')?.click()}
-          className={`upload-zone max-w-lg mx-auto cursor-pointer ${dragging ? 'drag-over' : ''}`}
+          className={`upload-zone max-w-lg mx-auto ${dragging ? 'drag-over' : ''}`}
         >
           <input
+            ref={inputRef}
             id="hero-upload"
             type="file"
             accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
             className="hidden"
-            onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
           />
-          <Upload className="w-10 h-10 text-blue-400 mx-auto mb-3" />
-          <p className="text-slate-700 font-semibold text-lg mb-1">Drop your file here</p>
-          <p className="text-slate-500 text-sm">PDF, Word, JPG, PNG — or click to browse</p>
-          <div className="mt-4 flex flex-wrap justify-center gap-2">
-            {['PDF', 'DOCX', 'JPG', 'PNG'].map((f) => (
-              <span key={f} className="px-2 py-0.5 bg-white rounded-full text-xs font-mono text-slate-600 border border-slate-200">{f}</span>
-            ))}
-          </div>
+          <label htmlFor="hero-upload" className="cursor-pointer block">
+            <Upload className="w-10 h-10 text-blue-400 mx-auto mb-3" />
+            <p className="text-slate-700 font-semibold text-lg mb-1">Drop your file here</p>
+            <p className="text-slate-500 text-sm">PDF, Word, JPG, PNG — or click to browse</p>
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              {['PDF', 'DOCX', 'JPG', 'PNG'].map((f) => (
+                <span key={f} className="px-2 py-0.5 bg-white rounded-full text-xs font-mono text-slate-600 border border-slate-200">{f}</span>
+              ))}
+            </div>
+          </label>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8">
@@ -150,14 +120,8 @@ export default function HomePage() {
         <p className="text-center text-slate-500 text-sm mb-8">No account, no limits, no catches.</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
           {features.map((f) => (
-            <Link
-              key={f.title}
-              href={f.href}
-              className="card hover:shadow-md hover:border-blue-200 transition-all group"
-            >
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 ${f.color}`}>
-                {f.icon}
-              </div>
+            <Link key={f.title} href={f.href} className="card hover:shadow-md hover:border-blue-200 transition-all group">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 ${f.color}`}>{f.icon}</div>
               <h3 className="font-semibold text-slate-800 group-hover:text-blue-600 transition-colors mb-1">{f.title}</h3>
               <p className="text-sm text-slate-500 leading-relaxed">{f.desc}</p>
             </Link>

@@ -10,6 +10,7 @@ import {
 import { PDFDocument, degrees, rgb } from 'pdf-lib';
 import toast from 'react-hot-toast';
 import DownloadModal from '@/components/DownloadModal';
+import { useFileStore } from '@/store/fileStore';
 
 type Tool = 'view' | 'text' | 'merge' | 'split' | 'compress' | 'rotate';
 
@@ -22,6 +23,7 @@ interface PageInfo {
 export default function EditorPage() {
   const searchParams = useSearchParams();
   const initialTool = (searchParams.get('tool') as Tool) || 'view';
+  const { pendingFile, clearPendingFile } = useFileStore();
 
   const [activeTool, setActiveTool] = useState<Tool>(initialTool);
   const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
@@ -67,6 +69,14 @@ export default function EditorPage() {
       setLoading(false);
     }
   }, []);
+
+  // Auto-load a file passed from the home page via the file store
+  useEffect(() => {
+    if (pendingFile) {
+      loadPDF(pendingFile);
+      clearPendingFile();
+    }
+  }, [pendingFile, loadPDF, clearPendingFile]);
 
   // Render current page to canvas using pdf.js
   useEffect(() => {
