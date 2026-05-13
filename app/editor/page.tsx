@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import {
   Upload, Download, RotateCw, RotateCcw, Trash2, Plus,
   Layers, Scissors, Zap, Type, ChevronLeft, ChevronRight,
-  FileText, AlertCircle, CheckCircle2, Move, Maximize2
+  FileText, AlertCircle
 } from 'lucide-react';
 import { PDFDocument, degrees, rgb } from 'pdf-lib';
 import toast from 'react-hot-toast';
@@ -38,12 +38,20 @@ export default function EditorPage() {
   const [splitPages, setSplitPages] = useState('');
   const [showDownload, setShowDownload] = useState(false);
   const [downloadData, setDownloadData] = useState<{ bytes: Uint8Array; name: string } | null>(null);
+  const [renderError, setRenderError] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const sidebarFileInputRef = useRef<HTMLInputElement>(null);
   const mergeInputRef = useRef<HTMLInputElement>(null);
 
   const loadPDF = useCallback(async (file: File) => {
+    if (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf') {
+      toast.error('Please upload a PDF file');
+      return;
+    }
     setLoading(true);
+    setRenderError(false);
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
       const doc = await PDFDocument.load(bytes);
@@ -54,7 +62,7 @@ export default function EditorPage() {
       setCurrentPage(0);
       toast.success(`Loaded ${file.name} — ${doc.getPageCount()} page(s)`);
     } catch {
-      toast.error('Failed to load PDF. Is the file valid?');
+      toast.error('Failed to load PDF. The file may be corrupted or password-protected.');
     } finally {
       setLoading(false);
     }
@@ -62,23 +70,26 @@ export default function EditorPage() {
 
   // Render current page to canvas using pdf.js
   useEffect(() => {
-    if (!pdfBytes || !canvasRef.current) return;
+    if (!pdfBytes) return;
 
-    let cancelled = false;
+    // Wait one tick so the canvas element is guaranteed to be in the DOM
+    const timer = setTimeout(async () => {
+      if (!canvasRef.current) return;
+      setRenderError(false);
 
-    const render = async () => {
       try {
         const pdfjsLib = await import('pdfjs-dist');
-        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+        // Use the locally hosted worker — no CDN dependency
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
         const loadingTask = pdfjsLib.getDocument({ data: pdfBytes.slice() });
         const pdf = await loadingTask.promise;
         const page = await pdf.getPage(currentPage + 1);
 
-        if (cancelled) return;
+        if (!canvasRef.current) return;
 
-        const canvas = canvasRef.current!;
-        const viewport = page.getViewport({ scale: 1.2 });
+        const canvas = canvasRef.current;
+        const viewport = page.getViewport({ scale: 1.5 });
         canvas.width = viewport.width;
         canvas.height = viewport.height;
 
@@ -89,11 +100,11 @@ export default function EditorPage() {
         }).promise;
       } catch (e) {
         console.error('Render error', e);
+        setRenderError(true);
       }
-    };
+    }, 50);
 
-    render();
-    return () => { cancelled = true; };
+    return () => clearTimeout(timer);
   }, [pdfBytes, currentPage]);
 
   const triggerDownload = useCallback((bytes: Uint8Array, name: string) => {
@@ -281,18 +292,26 @@ export default function EditorPage() {
         {!pdfDoc && (
           <div
             onClick={() => fileInputRef.current?.click()}
-            className="upload-zone max-w-xl mx-auto mb-8"
+            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragging(false);
+              const file = e.dataTransfer.files[0];
+              if (file) loadPDF(file);
+            }}
+            className={`upload-zone max-w-xl mx-auto mb-8 cursor-pointer ${dragging ? 'drag-over' : ''}`}
           >
             <input
               ref={fileInputRef}
               type="file"
-              accept=".pdf"
+              accept=".pdf,application/pdf"
               className="hidden"
-              onChange={(e) => e.target.files?.[0] && loadPDF(e.target.files[0])}
+              onChange={(e) => { if (e.target.files?.[0]) loadPDF(e.target.files[0]); }}
             />
             <Upload className="w-10 h-10 text-blue-400 mx-auto mb-3" />
             <p className="text-slate-700 font-semibold mb-1">Upload a PDF to get started</p>
-            <p className="text-slate-500 text-sm">Click or drag & drop your PDF here</p>
+            <p className="text-slate-500 text-sm">Click to browse or drag & drop your PDF here</p>
           </div>
         )}
 
@@ -325,17 +344,17 @@ export default function EditorPage() {
                 </div>
                 <p>{pdfDoc.getPageCount()} page(s)</p>
                 <button
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => sidebarFileInputRef.current?.click()}
                   className="mt-3 w-full text-blue-600 hover:text-blue-800 flex items-center gap-1 justify-center text-xs font-medium"
                 >
                   <Upload className="w-3 h-3" /> Load new file
                 </button>
                 <input
-                  ref={fileInputRef}
+                  ref={sidebarFileInputRef}
                   type="file"
-                  accept=".pdf"
+                  accept=".pdf,application/pdf"
                   className="hidden"
-                  onChange={(e) => e.target.files?.[0] && loadPDF(e.target.files[0])}
+                  onChange={(e) => { if (e.target.files?.[0]) loadPDF(e.target.files[0]); }}
                 />
               </div>
             </div>
@@ -503,6 +522,12 @@ export default function EditorPage() {
                     <div className="flex items-center gap-2 text-slate-400 self-center">
                       <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
                       Processing…
+                    </div>
+                  ) : renderError ? (
+                    <div className="flex flex-col items-center gap-3 self-center text-center px-6">
+                      <AlertCircle className="w-10 h-10 text-amber-400" />
+                      <p className="text-slate-600 font-medium">Preview unavailable</p>
+                      <p className="text-sm text-slate-400">The PDF loaded successfully — you can still edit and download it. Preview rendering requires a modern browser.</p>
                     </div>
                   ) : (
                     <canvas ref={canvasRef} className="shadow-xl max-w-full rounded" />

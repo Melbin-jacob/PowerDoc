@@ -178,7 +178,7 @@ export default function ConverterPage() {
     setProgress('Loading PDF…');
     try {
       const pdfjsLib = await import('pdfjs-dist');
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
       for (const file of files) {
         const bytes = new Uint8Array(await file.arrayBuffer());
