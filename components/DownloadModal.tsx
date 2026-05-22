@@ -39,6 +39,15 @@ export default function DownloadModal({ fileName, onDownload, onClose }: Downloa
     };
   }, [adBeforeDownload, adDuration]);
 
+  // Handle Escape key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
+
   const handleDownload = useCallback(() => {
     if (!canDownload) return;
     onDownload();
@@ -58,7 +67,11 @@ export default function DownloadModal({ fileName, onDownload, onClose }: Downloa
             <Download className="w-5 h-5 text-blue-600" />
             Download File
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+          <button
+            onClick={onClose}
+            aria-label="Close modal"
+            className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>

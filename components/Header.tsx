@@ -28,6 +28,8 @@ export default function Header() {
             <div className="relative">
               <button
                 onClick={() => setToolsOpen(!toolsOpen)}
+                aria-expanded={toolsOpen}
+                aria-haspopup="true"
                 className="flex items-center gap-1 px-4 py-2 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50 font-medium text-sm transition-colors"
               >
                 Tools <ChevronDown className="w-4 h-4" />
@@ -66,6 +68,7 @@ export default function Header() {
           <button
             className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100"
             onClick={() => setMenuOpen(!menuOpen)}
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
           >
             {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>

@@ -453,7 +453,11 @@ export default function EditorPage() {
                           <span className="text-xs text-slate-600 truncate flex items-center gap-1.5">
                             <FileText className="w-3.5 h-3.5 text-blue-500" /> {f.name}
                           </span>
-                          <button onClick={() => setMergeFiles((prev) => prev.filter((_, j) => j !== i))} className="text-red-400 hover:text-red-600 ml-2">
+                          <button
+                            onClick={() => setMergeFiles((prev) => prev.filter((_, j) => j !== i))}
+                            className="text-red-400 hover:text-red-600 ml-2"
+                            aria-label="Remove file"
+                          >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
@@ -509,6 +513,7 @@ export default function EditorPage() {
                       onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
                       disabled={currentPage === 0}
                       className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-40 text-slate-600"
+                      aria-label="Previous page"
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
@@ -519,6 +524,7 @@ export default function EditorPage() {
                       onClick={() => setCurrentPage((p) => Math.min(pdfDoc.getPageCount() - 1, p + 1))}
                       disabled={currentPage === pdfDoc.getPageCount() - 1}
                       className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-40 text-slate-600"
+                      aria-label="Next page"
                     >
                       <ChevronRight className="w-4 h-4" />
                     </button>
