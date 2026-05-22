@@ -347,7 +347,11 @@ export default function ConverterPage() {
                 </div>
                 <div className="flex items-center gap-2 ml-2 flex-shrink-0">
                   <span className="text-xs text-slate-400">{(f.size / 1024).toFixed(1)} KB</span>
-                  <button onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))} className="text-red-400 hover:text-red-600">
+                  <button
+                    onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))}
+                    className="text-red-400 hover:text-red-600"
+                    aria-label="Remove file"
+                  >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
