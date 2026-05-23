@@ -12,17 +12,30 @@ interface DownloadModalProps {
 
 export default function DownloadModal({ fileName, onDownload, onClose }: DownloadModalProps) {
   const { adBeforeDownload, adDuration } = useAdminStore();
-  const [secondsLeft, setSecondsLeft] = useState(adDuration);
+  const [secondsLeft, setSecondsLeft] = useState(() => adBeforeDownload ? adDuration : 0);
   const [canDownload, setCanDownload] = useState(!adBeforeDownload);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const downloadButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
+
+  useEffect(() => {
+    if (canDownload) {
+      downloadButtonRef.current?.focus();
+    }
+  }, [canDownload]);
 
   useEffect(() => {
     if (!adBeforeDownload) {
-      setCanDownload(true);
       return;
     }
 
-    setSecondsLeft(adDuration);
     intervalRef.current = setInterval(() => {
       setSecondsLeft((s) => {
         if (s <= 1) {
@@ -50,16 +63,28 @@ export default function DownloadModal({ fileName, onDownload, onClose }: Downloa
   const strokeDashoffset = circumference * (1 - progress);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <div className="flex items-center gap-2 font-semibold text-slate-800">
-            <Download className="w-5 h-5 text-blue-600" />
+          <h2 id="modal-title" className="flex items-center gap-2 font-semibold text-slate-800">
+            <Download className="w-5 h-5 text-blue-600" aria-hidden="true" />
             Download File
-          </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
-            <X className="w-5 h-5" />
+          </h2>
+          <button
+            onClick={onClose}
+            aria-label="Close modal"
+            className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+          >
+            <X className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
 
@@ -100,7 +125,7 @@ export default function DownloadModal({ fileName, onDownload, onClose }: Downloa
                   />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <Clock className="w-5 h-5 text-blue-500 mb-1" />
+                  <Clock className="w-5 h-5 text-blue-500 mb-1" aria-hidden="true" />
                   <span className="text-2xl font-bold text-slate-800">{secondsLeft}</span>
                 </div>
               </div>
@@ -113,7 +138,7 @@ export default function DownloadModal({ fileName, onDownload, onClose }: Downloa
           ) : (
             <div className="flex flex-col items-center gap-3 py-2">
               <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
-                <Download className="w-8 h-8 text-green-600" />
+                <Download className="w-8 h-8 text-green-600" aria-hidden="true" />
               </div>
               <p className="text-slate-700 font-medium text-center">Ready to download!</p>
               <p className="text-xs text-slate-500 text-center break-all max-w-xs">{fileName}</p>
@@ -121,15 +146,16 @@ export default function DownloadModal({ fileName, onDownload, onClose }: Downloa
           )}
 
           <button
+            ref={downloadButtonRef}
             onClick={handleDownload}
             disabled={!canDownload}
             className={`w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
               canDownload
-                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg'
+                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 outline-none'
                 : 'bg-slate-100 text-slate-400 cursor-not-allowed'
             }`}
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-4 h-4" aria-hidden="true" />
             {canDownload ? `Download ${fileName}` : `Download available in ${secondsLeft}s`}
           </button>
 
