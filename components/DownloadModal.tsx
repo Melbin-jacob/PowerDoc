@@ -15,6 +15,23 @@ export default function DownloadModal({ fileName, onDownload, onClose }: Downloa
   const [secondsLeft, setSecondsLeft] = useState(adDuration);
   const [canDownload, setCanDownload] = useState(!adBeforeDownload);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const downloadBtnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
+
+  useEffect(() => {
+    if (canDownload && downloadBtnRef.current) {
+      downloadBtnRef.current.focus();
+    }
+  }, [canDownload]);
 
   useEffect(() => {
     if (!adBeforeDownload) {
@@ -58,7 +75,11 @@ export default function DownloadModal({ fileName, onDownload, onClose }: Downloa
             <Download className="w-5 h-5 text-blue-600" />
             Download File
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+          <button
+            onClick={onClose}
+            aria-label="Close modal"
+            className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -121,6 +142,7 @@ export default function DownloadModal({ fileName, onDownload, onClose }: Downloa
           )}
 
           <button
+            ref={downloadBtnRef}
             onClick={handleDownload}
             disabled={!canDownload}
             className={`w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
