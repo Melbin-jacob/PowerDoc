@@ -1,0 +1,3 @@
+## 2025-05-14 - Focus Management for Delayed Interactive Elements
+**Learning:** For components where a primary action button is initially disabled (e.g., during an ad countdown or a significant loading state), keyboard and screen reader users may lose context once the button becomes enabled. Programmatically moving focus to the button when its state changes to 'enabled' provides immediate feedback and streamlines the next step in the user journey.
+**Action:** Implement a `useEffect` hook to monitor the enabled state of gated buttons and use a `ref` to programmatically call `.focus()` when they become interactive.
