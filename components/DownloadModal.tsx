@@ -12,22 +12,21 @@ interface DownloadModalProps {
 
 export default function DownloadModal({ fileName, onDownload, onClose }: DownloadModalProps) {
   const { adBeforeDownload, adDuration } = useAdminStore();
-  const [secondsLeft, setSecondsLeft] = useState(adDuration);
-  const [canDownload, setCanDownload] = useState(!adBeforeDownload);
+  const [secondsLeft, setSecondsLeft] = useState(adBeforeDownload ? adDuration : 0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const downloadButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Derived state: can download if ads are disabled or countdown finished
+  const canDownload = !adBeforeDownload || secondsLeft === 0;
 
   useEffect(() => {
-    if (!adBeforeDownload) {
-      setCanDownload(true);
-      return;
-    }
+    if (!adBeforeDownload) return;
 
-    setSecondsLeft(adDuration);
     intervalRef.current = setInterval(() => {
       setSecondsLeft((s) => {
         if (s <= 1) {
-          clearInterval(intervalRef.current!);
-          setCanDownload(true);
+          if (intervalRef.current) clearInterval(intervalRef.current);
           return 0;
         }
         return s - 1;
@@ -38,6 +37,27 @@ export default function DownloadModal({ fileName, onDownload, onClose }: Downloa
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [adBeforeDownload, adDuration]);
+
+  // Accessibility: Close on Escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
+
+  // Focus management: Focus close button on mount
+  useEffect(() => {
+    closeButtonRef.current?.focus();
+  }, []);
+
+  // Focus management: Focus download button when enabled
+  useEffect(() => {
+    if (canDownload) {
+      downloadButtonRef.current?.focus();
+    }
+  }, [canDownload]);
 
   const handleDownload = useCallback(() => {
     if (!canDownload) return;
@@ -50,15 +70,23 @@ export default function DownloadModal({ fileName, onDownload, onClose }: Downloa
   const strokeDashoffset = circumference * (1 - progress);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden" role="dialog" aria-modal="true" aria-labelledby="download-modal-title">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <div className="flex items-center gap-2 font-semibold text-slate-800">
+          <div id="download-modal-title" className="flex items-center gap-2 font-semibold text-slate-800">
             <Download className="w-5 h-5 text-blue-600" />
             Download File
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+          <button
+            ref={closeButtonRef}
+            onClick={onClose}
+            aria-label="Close"
+            className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors focus:ring-2 focus:ring-blue-500 outline-none"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -121,11 +149,12 @@ export default function DownloadModal({ fileName, onDownload, onClose }: Downloa
           )}
 
           <button
+            ref={downloadButtonRef}
             onClick={handleDownload}
             disabled={!canDownload}
             className={`w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
               canDownload
-                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg'
+                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 outline-none'
                 : 'bg-slate-100 text-slate-400 cursor-not-allowed'
             }`}
           >
