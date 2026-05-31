@@ -1,0 +1,3 @@
+## 2026-05-31 - Header Accessibility and Keyboard Navigation
+**Learning:** Adding ARIA attributes (`aria-expanded`, `aria-haspopup`, `role="menu"`) and global keyboard listeners (specifically for the 'Escape' key) significantly enhances navigation accessibility for screen reader and keyboard users. When using Playwright for verification in a Next.js environment, it's crucial to use `exact=True` for role-based locators to avoid collisions with internal Next.js dev tools.
+**Action:** Always include ARIA attributes for interactive elements and implement 'Escape' key handlers for dismissible UI components like dropdowns and modals.
