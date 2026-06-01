@@ -15,6 +15,23 @@ export default function DownloadModal({ fileName, onDownload, onClose }: Downloa
   const [secondsLeft, setSecondsLeft] = useState(adDuration);
   const [canDownload, setCanDownload] = useState(!adBeforeDownload);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const downloadButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Close on Escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
+
+  // Focus download button when it becomes active
+  useEffect(() => {
+    if (canDownload) {
+      downloadButtonRef.current?.focus();
+    }
+  }, [canDownload]);
 
   useEffect(() => {
     if (!adBeforeDownload) {
@@ -50,15 +67,25 @@ export default function DownloadModal({ fileName, onDownload, onClose }: Downloa
   const strokeDashoffset = circumference * (1 - progress);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="download-modal-title"
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <div className="flex items-center gap-2 font-semibold text-slate-800">
+          <div id="download-modal-title" className="flex items-center gap-2 font-semibold text-slate-800">
             <Download className="w-5 h-5 text-blue-600" />
             Download File
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+          <button
+            onClick={onClose}
+            className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+            aria-label="Close download modal"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -121,11 +148,12 @@ export default function DownloadModal({ fileName, onDownload, onClose }: Downloa
           )}
 
           <button
+            ref={downloadButtonRef}
             onClick={handleDownload}
             disabled={!canDownload}
             className={`w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
               canDownload
-                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg'
+                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg focus:ring-2 focus:ring-blue-500 outline-none'
                 : 'bg-slate-100 text-slate-400 cursor-not-allowed'
             }`}
           >

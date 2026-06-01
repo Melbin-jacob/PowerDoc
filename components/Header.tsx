@@ -1,12 +1,24 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FileText, Menu, X, ChevronDown } from 'lucide-react';
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
+
+  // Close menus on Escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setToolsOpen(false);
+        setMenuOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, []);
 
   const tools = [
     { href: '/editor', label: 'PDF Editor', desc: 'Edit, annotate & organize PDFs' },
@@ -29,17 +41,24 @@ export default function Header() {
               <button
                 onClick={() => setToolsOpen(!toolsOpen)}
                 className="flex items-center gap-1 px-4 py-2 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50 font-medium text-sm transition-colors"
+                aria-haspopup="menu"
+                aria-expanded={toolsOpen}
+                aria-label="Toggle tools menu"
               >
                 Tools <ChevronDown className="w-4 h-4" />
               </button>
               {toolsOpen && (
-                <div className="absolute left-0 top-full mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden z-50">
+                <div
+                  className="absolute left-0 top-full mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden z-50"
+                  role="menu"
+                >
                   {tools.map((t) => (
                     <Link
                       key={t.href}
                       href={t.href}
                       onClick={() => setToolsOpen(false)}
                       className="block px-4 py-3 hover:bg-blue-50 transition-colors"
+                      role="menuitem"
                     >
                       <div className="font-medium text-slate-800 text-sm">{t.label}</div>
                       <div className="text-xs text-slate-500 mt-0.5">{t.desc}</div>
@@ -66,6 +85,8 @@ export default function Header() {
           <button
             className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100"
             onClick={() => setMenuOpen(!menuOpen)}
+            aria-expanded={menuOpen}
+            aria-label={menuOpen ? "Close main menu" : "Open main menu"}
           >
             {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
