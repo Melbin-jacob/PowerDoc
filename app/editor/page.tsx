@@ -508,6 +508,7 @@ export default function EditorPage() {
                     <button
                       onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
                       disabled={currentPage === 0}
+                      aria-label="Previous page"
                       className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-40 text-slate-600"
                     >
                       <ChevronLeft className="w-4 h-4" />
@@ -518,6 +519,7 @@ export default function EditorPage() {
                     <button
                       onClick={() => setCurrentPage((p) => Math.min(pdfDoc.getPageCount() - 1, p + 1))}
                       disabled={currentPage === pdfDoc.getPageCount() - 1}
+                      aria-label="Next page"
                       className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-40 text-slate-600"
                     >
                       <ChevronRight className="w-4 h-4" />
