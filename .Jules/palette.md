@@ -1,0 +1,3 @@
+## 2025-05-14 - Header Navigation Accessibility
+**Learning:** Mobile menu toggles often lack accessible names when they only contain icons. Using a dynamic `aria-label` (e.g., "Open menu" vs "Close menu") based on state significantly improves the experience for screen reader users. Additionally, providing an 'Escape' key listener to close both desktop and mobile menus is a standard but frequently missed keyboard navigation pattern.
+**Action:** Always include dynamic `aria-label` for icon-only toggles and implement `Escape` key listeners for all interactive overlays like dropdowns and mobile menus.
