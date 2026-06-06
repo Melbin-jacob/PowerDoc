@@ -1,0 +1,3 @@
+## 2025-05-14 - Accessible Modal and Countdown UX
+**Learning:** For modals with countdowns, use `aria-live="polite"` on the final status message rather than the ticking timer to prevent screen reader "noise". Implement `role="dialog"`, `aria-modal="true"`, and `aria-labelledby` for semantic correctness. Auto-focusing the action button once it becomes enabled after a countdown provides a seamless transition for keyboard users.
+**Action:** Always verify modal accessibility with `role="dialog"` and focus management. Use the "adjusting state based on props" pattern (updating state during render) to handle state initialization from external stores without triggering ESLint `react-hooks/set-state-in-effect` errors.
