@@ -1,0 +1,3 @@
+## 2025-06-09 - Accessibility and Keyboard Navigation for Global Navigation
+**Learning:** Global interactive elements like dropdown menus and mobile navigation toggles often lack standard accessibility attributes (aria-expanded, aria-controls, aria-haspopup) and keyboard listeners (Escape key), making them difficult to navigate for keyboard-only and screen reader users.
+**Action:** Always implement dynamic `aria-label` for state-changing buttons, ensure `aria-expanded` reflects the current state, and add a window-level `Escape` key listener to provide a standard way to dismiss transient UI components.
