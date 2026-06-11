@@ -1,12 +1,23 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FileText, Menu, X, ChevronDown } from 'lucide-react';
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
+
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMenuOpen(false);
+        setToolsOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, []);
 
   const tools = [
     { href: '/editor', label: 'PDF Editor', desc: 'Edit, annotate & organize PDFs' },
@@ -28,12 +39,18 @@ export default function Header() {
             <div className="relative">
               <button
                 onClick={() => setToolsOpen(!toolsOpen)}
+                aria-expanded={toolsOpen}
+                aria-haspopup="true"
+                aria-controls="tools-menu"
                 className="flex items-center gap-1 px-4 py-2 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50 font-medium text-sm transition-colors"
               >
                 Tools <ChevronDown className="w-4 h-4" />
               </button>
               {toolsOpen && (
-                <div className="absolute left-0 top-full mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden z-50">
+                <div
+                  id="tools-menu"
+                  className="absolute left-0 top-full mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden z-50"
+                >
                   {tools.map((t) => (
                     <Link
                       key={t.href}
@@ -66,6 +83,9 @@ export default function Header() {
           <button
             className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100"
             onClick={() => setMenuOpen(!menuOpen)}
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-menu"
           >
             {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -74,7 +94,10 @@ export default function Header() {
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="md:hidden border-t border-slate-200 bg-white px-4 py-4 space-y-2">
+        <div
+          id="mobile-menu"
+          className="md:hidden border-t border-slate-200 bg-white px-4 py-4 space-y-2"
+        >
           {tools.map((t) => (
             <Link
               key={t.href}
