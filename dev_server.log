@@ -1,0 +1,10 @@
+
+> powerdoc-app@0.1.0 dev /app
+> next dev
+
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+✓ Ready in 532ms
+
+ GET / 200 in 952ms (next.js: 302ms, application-code: 649ms)
