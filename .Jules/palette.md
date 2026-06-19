@@ -1,0 +1,3 @@
+## 2025-05-14 - [Enhance DownloadModal accessibility and UX]
+**Learning:** Modals require a combination of ARIA attributes (role="dialog", aria-modal="true", aria-labelledby), keyboard listeners (Escape key), and backdrop click-to-close handlers to be fully accessible and intuitive. Using `useId` for stable `aria-labelledby` IDs prevents mismatch during re-renders.
+**Action:** Always include these three pillars (ARIA, keyboard, backdrop) when implementing or refining modal components. Use the 'adjusting state based on props' pattern to reset internal modal state when external props change without triggering ESLint `react-hooks/set-state-in-effect` errors.
