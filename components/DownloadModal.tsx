@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useId } from 'react';
 import { Download, X, Clock } from 'lucide-react';
 import { useAdminStore } from '@/store/adminStore';
 
@@ -14,15 +14,42 @@ export default function DownloadModal({ fileName, onDownload, onClose }: Downloa
   const { adBeforeDownload, adDuration } = useAdminStore();
   const [secondsLeft, setSecondsLeft] = useState(adDuration);
   const [canDownload, setCanDownload] = useState(!adBeforeDownload);
+
+  // Sync state with props/store without effect to avoid cascading renders
+  const [prevAdBeforeDownload, setPrevAdBeforeDownload] = useState(adBeforeDownload);
+  if (adBeforeDownload !== prevAdBeforeDownload) {
+    setPrevAdBeforeDownload(adBeforeDownload);
+    setCanDownload(!adBeforeDownload);
+  }
+
+  const [prevAdDuration, setPrevAdDuration] = useState(adDuration);
+  if (adDuration !== prevAdDuration) {
+    setPrevAdDuration(adDuration);
+    setSecondsLeft(adDuration);
+  }
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const downloadButtonRef = useRef<HTMLButtonElement>(null);
+  const modalTitleId = useId();
+
+  // Escape key to close
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  // Focus download button when ready
+  useEffect(() => {
+    if (canDownload) {
+      downloadButtonRef.current?.focus();
+    }
+  }, [canDownload]);
 
   useEffect(() => {
-    if (!adBeforeDownload) {
-      setCanDownload(true);
-      return;
-    }
+    if (!adBeforeDownload) return;
 
-    setSecondsLeft(adDuration);
     intervalRef.current = setInterval(() => {
       setSecondsLeft((s) => {
         if (s <= 1) {
@@ -45,20 +72,36 @@ export default function DownloadModal({ fileName, onDownload, onClose }: Downloa
     onClose();
   }, [canDownload, onDownload, onClose]);
 
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) onClose();
+  };
+
   const circumference = 2 * Math.PI * 44;
   const progress = adBeforeDownload ? (adDuration - secondsLeft) / adDuration : 1;
   const strokeDashoffset = circumference * (1 - progress);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      onClick={handleBackdropClick}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={modalTitleId}
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <div className="flex items-center gap-2 font-semibold text-slate-800">
+          <div id={modalTitleId} className="flex items-center gap-2 font-semibold text-slate-800">
             <Download className="w-5 h-5 text-blue-600" />
             Download File
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+          <button
+            onClick={onClose}
+            aria-label="Close modal"
+            className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -111,7 +154,7 @@ export default function DownloadModal({ fileName, onDownload, onClose }: Downloa
               </p>
             </>
           ) : (
-            <div className="flex flex-col items-center gap-3 py-2">
+            <div className="flex flex-col items-center gap-3 py-2" aria-live="polite">
               <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
                 <Download className="w-8 h-8 text-green-600" />
               </div>
@@ -121,6 +164,7 @@ export default function DownloadModal({ fileName, onDownload, onClose }: Downloa
           )}
 
           <button
+            ref={downloadButtonRef}
             onClick={handleDownload}
             disabled={!canDownload}
             className={`w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
