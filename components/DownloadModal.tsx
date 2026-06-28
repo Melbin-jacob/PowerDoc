@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useId } from 'react';
 import { Download, X, Clock } from 'lucide-react';
 import { useAdminStore } from '@/store/adminStore';
 
@@ -11,18 +11,42 @@ interface DownloadModalProps {
 }
 
 export default function DownloadModal({ fileName, onDownload, onClose }: DownloadModalProps) {
+  const titleId = useId();
+  const downloadBtnRef = useRef<HTMLButtonElement>(null);
   const { adBeforeDownload, adDuration } = useAdminStore();
   const [secondsLeft, setSecondsLeft] = useState(adDuration);
   const [canDownload, setCanDownload] = useState(!adBeforeDownload);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => {
-    if (!adBeforeDownload) {
-      setCanDownload(true);
-      return;
-    }
-
+  // Sync state if adBeforeDownload or adDuration changes
+  if (!adBeforeDownload && !canDownload) {
+    setCanDownload(true);
+  }
+  if (adBeforeDownload && secondsLeft !== adDuration && !canDownload) {
     setSecondsLeft(adDuration);
+  }
+
+  // Focus download button when it becomes enabled
+  useEffect(() => {
+    if (canDownload && downloadBtnRef.current) {
+      downloadBtnRef.current.focus();
+    }
+  }, [canDownload]);
+
+  // Handle Escape key to close modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  useEffect(() => {
+    if (!adBeforeDownload || canDownload) return;
+
     intervalRef.current = setInterval(() => {
       setSecondsLeft((s) => {
         if (s <= 1) {
@@ -37,7 +61,7 @@ export default function DownloadModal({ fileName, onDownload, onClose }: Downloa
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [adBeforeDownload, adDuration]);
+  }, [adBeforeDownload, adDuration, canDownload]);
 
   const handleDownload = useCallback(() => {
     if (!canDownload) return;
@@ -50,11 +74,19 @@ export default function DownloadModal({ fileName, onDownload, onClose }: Downloa
   const strokeDashoffset = circumference * (1 - progress);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <div className="flex items-center gap-2 font-semibold text-slate-800">
+          <div id={titleId} className="flex items-center gap-2 font-semibold text-slate-800">
             <Download className="w-5 h-5 text-blue-600" />
             Download File
           </div>
@@ -115,12 +147,13 @@ export default function DownloadModal({ fileName, onDownload, onClose }: Downloa
               <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
                 <Download className="w-8 h-8 text-green-600" />
               </div>
-              <p className="text-slate-700 font-medium text-center">Ready to download!</p>
+              <p className="text-slate-700 font-medium text-center" aria-live="polite">Ready to download!</p>
               <p className="text-xs text-slate-500 text-center break-all max-w-xs">{fileName}</p>
             </div>
           )}
 
           <button
+            ref={downloadBtnRef}
             onClick={handleDownload}
             disabled={!canDownload}
             className={`w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
