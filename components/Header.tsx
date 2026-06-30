@@ -1,17 +1,42 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect, useRef, useId } from 'react';
 import { FileText, Menu, X, ChevronDown } from 'lucide-react';
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
+  const toolsMenuId = useId();
+  const mobileMenuId = useId();
+  const toolsRef = useRef<HTMLDivElement>(null);
 
   const tools = [
     { href: '/editor', label: 'PDF Editor', desc: 'Edit, annotate & organize PDFs' },
     { href: '/converter', label: 'Document Converter', desc: 'Convert between formats' },
   ];
+
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setToolsOpen(false);
+        setMenuOpen(false);
+      }
+    };
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (toolsOpen && toolsRef.current && !toolsRef.current.contains(e.target as Node)) {
+        setToolsOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      window.removeEventListener('keydown', handleEscape);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [toolsOpen]);
 
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
@@ -25,19 +50,27 @@ export default function Header() {
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-1">
-            <div className="relative">
+            <div className="relative" ref={toolsRef}>
               <button
                 onClick={() => setToolsOpen(!toolsOpen)}
+                aria-expanded={toolsOpen}
+                aria-haspopup="true"
+                aria-controls={toolsMenuId}
                 className="flex items-center gap-1 px-4 py-2 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50 font-medium text-sm transition-colors"
               >
                 Tools <ChevronDown className="w-4 h-4" />
               </button>
               {toolsOpen && (
-                <div className="absolute left-0 top-full mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden z-50">
+                <div
+                  id={toolsMenuId}
+                  role="menu"
+                  className="absolute left-0 top-full mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden z-50"
+                >
                   {tools.map((t) => (
                     <Link
                       key={t.href}
                       href={t.href}
+                      role="menuitem"
                       onClick={() => setToolsOpen(false)}
                       className="block px-4 py-3 hover:bg-blue-50 transition-colors"
                     >
@@ -66,6 +99,10 @@ export default function Header() {
           <button
             className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100"
             onClick={() => setMenuOpen(!menuOpen)}
+            aria-expanded={menuOpen}
+            aria-haspopup="true"
+            aria-controls={mobileMenuId}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
           >
             {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -74,7 +111,10 @@ export default function Header() {
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="md:hidden border-t border-slate-200 bg-white px-4 py-4 space-y-2">
+        <div
+          id={mobileMenuId}
+          className="md:hidden border-t border-slate-200 bg-white px-4 py-4 space-y-2"
+        >
           {tools.map((t) => (
             <Link
               key={t.href}
